@@ -83,6 +83,25 @@
     border-top: 1px solid var(--border); overflow-x: auto; font-size: 13.5px; line-height: 1.55; }
   pre .c { color: var(--muted); }
 
+  .flavor-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .flavor-tabs button { background: var(--panel); color: var(--muted);
+    border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px;
+    font-size: 14px; cursor: pointer; font-family: ui-monospace, monospace; }
+  .flavor-tabs button:hover { color: var(--text); border-color: var(--accent); }
+  .flavor-tabs button.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .skill-toolbar { display: flex; align-items: center; gap: 10px; background: var(--panel);
+    border: 1px solid var(--border); border-bottom: none; border-radius: 8px 8px 0 0;
+    padding: 8px 14px; font-size: 13px; }
+  .skill-toolbar code { color: var(--accent); }
+  .skill-toolbar .actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .skill-toolbar a, .skill-toolbar .copy { color: var(--muted); background: transparent;
+    border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px; font-size: 12px; cursor: pointer; }
+  .skill-toolbar a:hover, .skill-toolbar .copy:hover { color: var(--text); border-color: var(--accent); text-decoration: none; }
+  .skill-md { max-height: 460px; overflow: auto; margin: 0; padding: 16px 18px;
+    background: var(--code-bg); border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 8px 8px; white-space: pre-wrap; word-break: break-word;
+    font-size: 13px; line-height: 1.6; }
+
   .dl { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
   @media (max-width: 680px){ .dl { grid-template-columns: 1fr; } }
   .dl a { display: flex; justify-content: space-between; align-items: center;
@@ -108,6 +127,7 @@
     <nav class="links">
       <a href="#features"><span class="ko">기능</span><span class="en">Features</span></a>
       <a href="#commands"><span class="ko">명령어</span><span class="en">Commands</span></a>
+      <a href="#skill"><span class="ko">스킬</span><span class="en">Skill</span></a>
       <a href="#download"><span class="ko">다운로드</span><span class="en">Download</span></a>
       <a href="https://github.com/jhl-labs/jira-cli">GitHub</a>
     </nav>
@@ -234,7 +254,38 @@ jira-cli assign --key PROJ-123 --unassign</pre></div>
 jira-cli labels --key PROJ-123 --add "backend,urgent"
 jira-cli delete --key PROJ-123 --yes
 jira-cli projects</pre></div>
+        <div class="cmdrow"><div class="head"><b>generate-skill</b><span><span class="ko">에이전트용 스킬 문서 생성</span><span class="en">emit an agent skill doc</span></span></div>
+<pre>jira-cli generate-skill claude    <span class="c"># or codex / gemini / opencode</span>
+jira-cli generate-skill           <span class="c"># generic</span></pre></div>
       </div>
+    </div>
+  </section>
+
+  <section id="skill">
+    <div class="wrap">
+      <h2><span class="ko">스킬 미리보기</span><span class="en">Skill preview</span></h2>
+      <p class="lead"><span class="ko"><code>generate-skill</code> 결과 미리보기</span><span class="en"><code>generate-skill</code> output preview</span></p>
+      <p style="color:var(--muted); max-width:760px; margin:0 0 20px;">
+        <span class="ko">아래는 <code>jira-cli generate-skill</code>로 만들어지는 <code>jira-skill.md</code>의 실제 본문입니다.
+        플랫폼(플래버)을 선택해 미리 보고, 그대로 내려받거나 복사할 수 있습니다.</span>
+        <span class="en">Below is the actual body of the <code>jira-skill.md</code> produced by <code>jira-cli generate-skill</code>.
+        Pick a platform (flavor) to preview, then download or copy it.</span>
+      </p>
+      <div class="flavor-tabs" id="flavorTabs">
+        <button data-flavor="generic" class="active">generic</button>
+        <button data-flavor="claude">claude</button>
+        <button data-flavor="codex">codex</button>
+        <button data-flavor="gemini">gemini</button>
+        <button data-flavor="opencode">opencode</button>
+      </div>
+      <div class="skill-toolbar">
+        <code id="skillCmd">jira-cli generate-skill</code>
+        <div class="actions">
+          <a id="skillDownload" href="skills/jira-skill-generic.md" download>download</a>
+          <button class="copy" data-copy="skillPreview">copy</button>
+        </div>
+      </div>
+      <pre id="skillPreview" class="skill-md">Loading…</pre>
     </div>
   </section>
 
@@ -307,6 +358,40 @@ jira-cli projects</pre></div>
       });
     });
   });
+
+  // Skill preview: load the actual generated md per flavor.
+  (function () {
+    var tabs = document.querySelectorAll('#flavorTabs button');
+    var preview = document.getElementById('skillPreview');
+    var dl = document.getElementById('skillDownload');
+    var cmd = document.getElementById('skillCmd');
+    if (!tabs.length || !preview) return;
+    var cache = {};
+    function load(flavor) {
+      var file = 'skills/jira-skill-' + flavor + '.md';
+      dl.setAttribute('href', file);
+      cmd.textContent = 'jira-cli generate-skill' + (flavor === 'generic' ? '' : ' ' + flavor);
+      if (cache[flavor] != null) { preview.textContent = cache[flavor]; return; }
+      preview.textContent = 'Loading…';
+      fetch(file).then(function (r) {
+        if (!r.ok) throw new Error(r.status);
+        return r.text();
+      }).then(function (text) {
+        cache[flavor] = text; preview.textContent = text;
+      }).catch(function () {
+        preview.textContent = 'Preview unavailable here. View it on the hosted page, or run:\n\n  jira-cli generate-skill ' +
+          (flavor === 'generic' ? '' : flavor);
+      });
+    }
+    tabs.forEach(function (b) {
+      b.addEventListener('click', function () {
+        tabs.forEach(function (x) { x.classList.remove('active'); });
+        b.classList.add('active');
+        load(b.getAttribute('data-flavor'));
+      });
+    });
+    load('generic');
+  })();
 </script>
 </body>
 </html>
