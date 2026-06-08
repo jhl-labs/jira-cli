@@ -14,11 +14,11 @@ func runAssign(args []string) error {
 	}
 	var (
 		key      = fs.String("key", "", "issue key (required)")
-		user     = fs.String("user", "", "assignee username")
+		assignee = fs.String("assignee", "", "assignee username")
 		unassign = fs.Bool("unassign", false, "remove the current assignee")
 	)
 	fs.Usage = func() {
-		fmt.Fprintln(fs.Output(), "Usage: jira-cli assign --key PROJ-123 (--user USERNAME | --unassign)")
+		fmt.Fprintln(fs.Output(), "Usage: jira-cli assign --key PROJ-123 (--assignee USERNAME | --unassign)")
 		fs.PrintDefaults()
 	}
 	if err := fs.Parse(args); err != nil {
@@ -27,11 +27,11 @@ func runAssign(args []string) error {
 	if err := requireFlag("key", *key); err != nil {
 		return err
 	}
-	if *user == "" && !*unassign {
-		return fmt.Errorf("provide --user USERNAME or --unassign")
+	if *assignee == "" && !*unassign {
+		return fmt.Errorf("provide --assignee USERNAME or --unassign")
 	}
-	if *user != "" && *unassign {
-		return fmt.Errorf("--user and --unassign are mutually exclusive")
+	if *assignee != "" && *unassign {
+		return fmt.Errorf("--assignee and --unassign are mutually exclusive")
 	}
 
 	cl, err := common.client()
@@ -39,12 +39,12 @@ func runAssign(args []string) error {
 		return err
 	}
 
-	name := *user // empty string => unassign
+	name := *assignee // empty string => unassign
 	if err := cl.AssignIssue(context.Background(), *key, name); err != nil {
 		return err
 	}
 
-	who := *user
+	who := *assignee
 	if *unassign {
 		who = "(unassigned)"
 	}

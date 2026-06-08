@@ -196,7 +196,7 @@ jira-cli transition --key PROJ-123 --to "Done" --comment "Shipped in 1.2.0"
 
 ### assign — set or clear the assignee
 ` + "```bash" + `
-jira-cli assign --key PROJ-123 --user alice
+jira-cli assign --key PROJ-123 --assignee alice
 jira-cli assign --key PROJ-123 --unassign
 ` + "```" + `
 

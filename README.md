@@ -82,7 +82,7 @@ jira-cli transition --key PROJ-123
 jira-cli transition --key PROJ-123 --to "Done" --comment "1.2.0에 반영"
 
 # 담당자 지정/해제
-jira-cli assign --key PROJ-123 --user alice
+jira-cli assign --key PROJ-123 --assignee alice
 jira-cli assign --key PROJ-123 --unassign
 
 # 댓글 / 라벨 / 삭제 / 프로젝트

@@ -227,7 +227,7 @@ jira-cli get --key PROJ-123 --description</pre></div>
 <pre>jira-cli transition --key PROJ-123              <span class="c"># list transitions</span>
 jira-cli transition --key PROJ-123 --to "Done" --comment "Shipped"</pre></div>
         <div class="cmdrow"><div class="head"><b>assign</b><span><span class="ko">담당자 지정/해제</span><span class="en">set/clear assignee</span></span></div>
-<pre>jira-cli assign --key PROJ-123 --user alice
+<pre>jira-cli assign --key PROJ-123 --assignee alice
 jira-cli assign --key PROJ-123 --unassign</pre></div>
         <div class="cmdrow"><div class="head"><b>more</b><span><span class="ko">댓글 · 라벨 · 삭제 · 프로젝트</span><span class="en">comment · labels · delete · projects</span></span></div>
 <pre>jira-cli comment --key PROJ-123 --body "Looking into this."
