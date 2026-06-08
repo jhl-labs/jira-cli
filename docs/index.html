@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark" data-lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jira-cli — Self-hosted Jira CLI for AI agents</title>
+<meta name="description" content="A small, dependency-free Go CLI for working with issues on a self-hosted Jira Server/Data Center instance. Built for AI agents and automation.">
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #2a3038;
+    --text: #e6edf3; --muted: #9aa7b4; --accent: #4c9aff; --accent-2: #2684ff;
+    --code-bg: #0a0d12; --ok: #3fb950; --warn: #d29922;
+  }
+  [data-theme="light"] {
+    --bg: #ffffff; --panel: #f4f5f7; --border: #dfe1e6;
+    --text: #172b4d; --muted: #5e6c84; --accent: #0052cc; --accent-2: #0747a6;
+    --code-bg: #f0f3f6; --ok: #1a7f37; --warn: #9a6700;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", Roboto, sans-serif;
+  }
+  code, pre, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--border);
+  }
+  .nav { display: flex; align-items: center; gap: 18px; height: 56px; }
+  .brand { font-weight: 700; letter-spacing: -.02em; }
+  .nav .links { display: flex; gap: 16px; margin-left: auto; }
+  .nav .links a { color: var(--muted); font-size: 14px; }
+  .nav .links a:hover { color: var(--text); text-decoration: none; }
+  .toggles { display: flex; gap: 8px; }
+  .toggles button {
+    background: var(--panel); color: var(--muted); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 9px; font-size: 13px; cursor: pointer;
+  }
+  .toggles button:hover { color: var(--text); border-color: var(--accent); }
+  @media (max-width: 680px) { .nav .links { display: none; } }
+
+  .hero { padding: 72px 0 48px; border-bottom: 1px solid var(--border); }
+  .hero h1 { font-size: 44px; margin: 0 0 12px; letter-spacing: -.03em; }
+  .hero .tag { font-size: 19px; color: var(--muted); margin: 0 0 28px; max-width: 680px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+  .badge { font-size: 12px; color: var(--muted); background: var(--panel);
+    border: 1px solid var(--border); border-radius: 100px; padding: 3px 11px; }
+  .cta { display: grid; gap: 12px; max-width: 720px; }
+  .cmd {
+    display: flex; align-items: center; gap: 10px; background: var(--code-bg);
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px;
+    font-size: 14px; overflow-x: auto;
+  }
+  .cmd .pfx { color: var(--accent); user-select: none; }
+  .cmd code { white-space: nowrap; color: var(--text); }
+  .copy { margin-left: auto; background: transparent; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 6px; padding: 3px 8px; font-size: 12px; cursor: pointer; }
+  .copy:hover { color: var(--text); border-color: var(--accent); }
+
+  section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .12em;
+    color: var(--accent); margin: 0 0 8px; }
+  section h2 + p.lead { margin: 0 0 28px; font-size: 22px; letter-spacing: -.01em; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .card p { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+  .cmdtable { display: grid; gap: 14px; }
+  .cmdrow { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .cmdrow .head { display: flex; align-items: baseline; gap: 10px; padding: 14px 18px 8px; }
+  .cmdrow .head b { font-family: ui-monospace, monospace; font-size: 15px; }
+  .cmdrow .head span { color: var(--muted); font-size: 14px; }
+  pre { margin: 0; padding: 14px 18px; background: var(--code-bg);
+    border-top: 1px solid var(--border); overflow-x: auto; font-size: 13.5px; line-height: 1.55; }
+  pre .c { color: var(--muted); }
+
+  .dl { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
+  @media (max-width: 680px){ .dl { grid-template-columns: 1fr; } }
+  .dl a { display: flex; justify-content: space-between; align-items: center;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; color: var(--text); }
+  .dl a:hover { border-color: var(--accent); text-decoration: none; }
+  .dl a span.arch { color: var(--muted); font-size: 13px; font-family: ui-monospace, monospace; }
+
+  .note { background: color-mix(in srgb, var(--warn) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--border));
+    border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14.5px; }
+  footer { padding: 40px 0 64px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
+
+  [data-lang="ko"] .en { display: none; }
+  [data-lang="en"] .ko { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <span class="brand mono">jira-cli</span>
+    <nav class="links">
+      <a href="#features"><span class="ko">기능</span><span class="en">Features</span></a>
+      <a href="#commands"><span class="ko">명령어</span><span class="en">Commands</span></a>
+      <a href="#download"><span class="ko">다운로드</span><span class="en">Download</span></a>
+      <a href="https://github.com/jhl-labs/jira-cli">GitHub</a>
+    </nav>
+    <div class="toggles">
+      <button id="langBtn" title="Language">EN</button>
+      <button id="themeBtn" title="Theme">☀</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="hero wrap">
+    <h1>jira-cli</h1>
+    <p class="tag">
+      <span class="ko">셀프호스팅 <strong>Jira Server/Data Center</strong> 환경에서 AI 에이전트와 자동화 스크립트가
+      이슈를 다루기 위한 가볍고 의존성 없는 CLI입니다. 단일 바이너리, 크로스플랫폼.</span>
+      <span class="en">A small, dependency-free CLI that lets AI agents and automation work with issues on a
+      self-hosted <strong>Jira Server/Data Center</strong> instance. Single binary, cross-platform.</span>
+    </p>
+    <div class="badges">
+      <span class="badge">Go · 0 dependencies</span>
+      <span class="badge">PAT / Basic auth</span>
+      <span class="badge">JQL search</span>
+      <span class="badge">Workflow transitions</span>
+      <span class="badge">JHL License · non-commercial</span>
+    </div>
+    <div class="cta">
+      <div class="cmd">
+        <span class="pfx">$</span>
+        <code id="install">curl -fsSL https://jhl-labs.github.io/jira-cli/install.sh | sh</code>
+        <button class="copy" data-copy="install">copy</button>
+      </div>
+      <div class="cmd">
+        <span class="pfx">$</span>
+        <code id="usage">jira-cli search --project PROJ --status "In Progress" --output text</code>
+        <button class="copy" data-copy="usage">copy</button>
+      </div>
+    </div>
+  </div>
+
+  <section id="why">
+    <div class="wrap">
+      <h2><span class="ko">왜 필요한가</span><span class="en">Why</span></h2>
+      <p class="lead">
+        <span class="ko">공식 Atlassian Remote MCP는 <strong>Cloud 중심</strong>입니다.</span>
+        <span class="en">The official Atlassian Remote MCP is <strong>Cloud-first</strong>.</span>
+      </p>
+      <p style="color:var(--muted); max-width:760px; margin:0;">
+        <span class="ko">Server/Data Center는 인증·네트워크·권한 모델이 다릅니다. jira-cli는 그 간극을 메우는
+        전용 CLI 계층으로, 인증(PAT/Basic)·재시도·JQL 검색·워크플로 전이를 일관되게 처리해 에이전트가
+        안전하게 내부 Jira를 다루게 합니다. confluence-cli의 형제 프로젝트입니다.</span>
+        <span class="en">Server/Data Center differs in auth, networking, and permissions. jira-cli is a dedicated
+        CLI layer that bridges the gap — handling auth (PAT/Basic), retries, JQL search, and workflow
+        transitions. A sibling of confluence-cli.</span>
+      </p>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <h2><span class="ko">기능</span><span class="en">Features</span></h2>
+      <p class="lead"><span class="ko">에이전트 친화적으로 설계됨</span><span class="en">Designed for agents</span></p>
+      <div class="grid">
+        <div class="card">
+          <h3><span class="ko">JQL 검색</span><span class="en">JQL search</span></h3>
+          <p><span class="ko">간편 플래그(project/status/text) 또는 원시 JQL로 이슈 검색.</span>
+             <span class="en">Find issues with simple flags or raw JQL.</span></p>
+        </div>
+        <div class="card">
+          <h3><span class="ko">이슈 수명주기</span><span class="en">Issue lifecycle</span></h3>
+          <p><span class="ko">create / get / update / comment / delete — 전 과정을 CLI로.</span>
+             <span class="en">create / get / update / comment / delete from the CLI.</span></p>
+        </div>
+        <div class="card">
+          <h3><span class="ko">워크플로 전이</span><span class="en">Workflow transitions</span></h3>
+          <p><span class="ko">가능한 전이 조회 후 이름/ID로 적용, 전이 중 댓글·담당자 지정.</span>
+             <span class="en">List then apply transitions by name/id, with comment &amp; assignee.</span></p>
+        </div>
+        <div class="card">
+          <h3><span class="ko">담당자 · 라벨</span><span class="en">Assign &amp; label</span></h3>
+          <p><span class="ko">담당자 지정/해제, 라벨 추가/삭제로 이슈 정리.</span>
+             <span class="en">Assign/unassign and add/remove labels.</span></p>
+        </div>
+        <div class="card">
+          <h3><span class="ko">에이전트 스킬 생성</span><span class="en">Agent skill generator</span></h3>
+          <p><span class="ko"><code>generate-skill</code>로 claude/codex/gemini/opencode용 스킬 문서 생성.</span>
+             <span class="en"><code>generate-skill</code> emits skill docs for claude/codex/gemini/opencode.</span></p>
+        </div>
+        <div class="card">
+          <h3><span class="ko">견고한 호출</span><span class="en">Resilient calls</span></h3>
+          <p><span class="ko">429/5xx에 지수 백오프 재시도, JSON 우선 출력.</span>
+             <span class="en">Exponential-backoff retries on 429/5xx, JSON-first output.</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="commands">
+    <div class="wrap">
+      <h2><span class="ko">명령어</span><span class="en">Commands</span></h2>
+      <p class="lead"><span class="ko">환경변수로 인증을 분리</span><span class="en">Auth via environment</span></p>
+      <pre><span class="c"># <span class="ko">인증 환경변수</span><span class="en">Authentication</span></span>
+export JIRA_BASE_URL="https://jira.example.com"
+export JIRA_TOKEN="&lt;personal-access-token&gt;"
+export JIRA_PROJECT="PROJ"   <span class="c"># <span class="ko">기본 프로젝트(선택)</span><span class="en">default project (optional)</span></span></pre>
+      <div style="height:14px"></div>
+      <div class="cmdtable">
+        <div class="cmdrow"><div class="head"><b>search</b><span><span class="ko">JQL로 이슈 검색</span><span class="en">find issues with JQL</span></span></div>
+<pre>jira-cli search --project PROJ --status "In Progress" --max 20
+jira-cli search --jql 'assignee = currentUser() AND resolution = Unresolved'</pre></div>
+        <div class="cmdrow"><div class="head"><b>get</b><span><span class="ko">이슈 조회</span><span class="en">read an issue</span></span></div>
+<pre>jira-cli get --key PROJ-123 --output text
+jira-cli get --key PROJ-123 --description</pre></div>
+        <div class="cmdrow"><div class="head"><b>create</b><span><span class="ko">이슈 생성</span><span class="en">create an issue</span></span></div>
+<pre>jira-cli create --project PROJ --summary "Fix login bug" --type Bug --priority High</pre></div>
+        <div class="cmdrow"><div class="head"><b>transition</b><span><span class="ko">워크플로 전이</span><span class="en">move through the workflow</span></span></div>
+<pre>jira-cli transition --key PROJ-123              <span class="c"># list transitions</span>
+jira-cli transition --key PROJ-123 --to "Done" --comment "Shipped"</pre></div>
+        <div class="cmdrow"><div class="head"><b>assign</b><span><span class="ko">담당자 지정/해제</span><span class="en">set/clear assignee</span></span></div>
+<pre>jira-cli assign --key PROJ-123 --user alice
+jira-cli assign --key PROJ-123 --unassign</pre></div>
+        <div class="cmdrow"><div class="head"><b>more</b><span><span class="ko">댓글 · 라벨 · 삭제 · 프로젝트</span><span class="en">comment · labels · delete · projects</span></span></div>
+<pre>jira-cli comment --key PROJ-123 --body "Looking into this."
+jira-cli labels --key PROJ-123 --add "backend,urgent"
+jira-cli delete --key PROJ-123 --yes
+jira-cli projects</pre></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="wrap">
+      <h2><span class="ko">다운로드</span><span class="en">Download</span></h2>
+      <p class="lead"><span class="ko">단일 바이너리, 설치 불필요</span><span class="en">Single binary, no runtime</span></p>
+      <div class="dl">
+        <a href="https://github.com/jhl-labs/jira-cli/releases/latest/download/jira-cli-linux-amd64">Linux <span class="arch">amd64</span></a>
+        <a href="https://github.com/jhl-labs/jira-cli/releases/latest/download/jira-cli-linux-arm64">Linux <span class="arch">arm64</span></a>
+        <a href="https://github.com/jhl-labs/jira-cli/releases/latest/download/jira-cli-darwin-amd64">macOS <span class="arch">amd64 (Intel)</span></a>
+        <a href="https://github.com/jhl-labs/jira-cli/releases/latest/download/jira-cli-darwin-arm64">macOS <span class="arch">arm64 (Apple)</span></a>
+        <a href="https://github.com/jhl-labs/jira-cli/releases/latest/download/jira-cli-windows-amd64.exe">Windows <span class="arch">amd64</span></a>
+        <a href="https://github.com/jhl-labs/jira-cli/releases/latest/download/SHA256SUMS">SHA256SUMS <span class="arch">verify</span></a>
+      </div>
+      <div style="height:16px"></div>
+      <p style="margin:0 0 8px; color:var(--muted); font-size:14px;">
+        <span class="ko">스크립트 설치 (Linux/macOS):</span><span class="en">Script install (Linux/macOS):</span></p>
+      <div class="cmd"><span class="pfx">$</span>
+        <code id="install2">curl -fsSL https://jhl-labs.github.io/jira-cli/install.sh | sh</code>
+        <button class="copy" data-copy="install2">copy</button></div>
+      <div style="height:16px"></div>
+      <p style="margin:0; font-size:14px;">
+        <a href="https://github.com/jhl-labs/jira-cli/releases"><span class="ko">모든 릴리스 보기 →</span><span class="en">All releases →</span></a></p>
+    </div>
+  </section>
+
+  <section id="note">
+    <div class="wrap">
+      <h2><span class="ko">주의</span><span class="en">Heads up</span></h2>
+      <p class="lead"><span class="ko">설명/댓글은 위키 마크업 텍스트</span><span class="en">Descriptions are wiki-markup text</span></p>
+      <div class="note">
+        <span class="ko">Server/DC에서 이슈 설명과 댓글 본문은 <strong>위키 마크업 텍스트 문자열</strong>입니다 —
+        마크다운도 Cloud의 ADF JSON도 아닙니다. 일반 문자열로 보내면 됩니다.</span>
+        <span class="en">On Server/DC, issue descriptions and comment bodies are <strong>wiki-markup text strings</strong> —
+        not Markdown and not Cloud's ADF JSON. Send plain strings.</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>jira-cli · <a href="https://github.com/jhl-labs/jira-cli/blob/main/LICENSE">JHL License</a> (non-commercial)</span>
+    <a href="https://github.com/jhl-labs/jira-cli">github.com/jhl-labs/jira-cli</a>
+    <a href="https://github.com/jhl-labs/confluence-cli"><span class="ko">형제 프로젝트: confluence-cli</span><span class="en">sibling: confluence-cli</span></a>
+  </div>
+</footer>
+
+<script>
+  var root = document.documentElement;
+  var langBtn = document.getElementById('langBtn');
+  var themeBtn = document.getElementById('themeBtn');
+  langBtn.addEventListener('click', function () {
+    var ko = root.getAttribute('data-lang') === 'ko';
+    root.setAttribute('data-lang', ko ? 'en' : 'ko');
+    root.setAttribute('lang', ko ? 'en' : 'ko');
+    langBtn.textContent = ko ? 'KO' : 'EN';
+  });
+  themeBtn.addEventListener('click', function () {
+    var dark = root.getAttribute('data-theme') === 'dark';
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    themeBtn.textContent = dark ? '☾' : '☀';
+  });
+  document.querySelectorAll('.copy').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var el = document.getElementById(b.getAttribute('data-copy'));
+      navigator.clipboard.writeText(el.textContent).then(function () {
+        var t = b.textContent; b.textContent = 'copied'; setTimeout(function(){ b.textContent = t; }, 1200);
+      });
+    });
+  });
+</script>
+</body>
+</html>

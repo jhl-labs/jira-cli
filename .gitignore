@@ -1,0 +1,14 @@
+# Build artifacts
+/jira-cli
+/jira-cli.exe
+/dist/
+*.exe
+
+# Local secrets / config
+.env
+*.local.json
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
