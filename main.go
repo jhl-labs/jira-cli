@@ -13,12 +13,18 @@ import (
 var version = "0.1.0-dev"
 
 func main() {
-	if len(os.Args) < 2 {
+	os.Exit(run(os.Args[1:]))
+}
+
+// run dispatches a command and returns the process exit code. It is split out
+// from main so it can be exercised by tests.
+func run(argv []string) int {
+	if len(argv) < 1 {
 		usage(os.Stderr)
-		os.Exit(2)
+		return 2
 	}
 
-	cmd, args := os.Args[1], os.Args[2:]
+	cmd, args := argv[0], argv[1:]
 	var err error
 	switch cmd {
 	case "search":
@@ -50,13 +56,14 @@ func main() {
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n\n", cmd)
 		usage(os.Stderr)
-		os.Exit(2)
+		return 2
 	}
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func usage(w *os.File) {
