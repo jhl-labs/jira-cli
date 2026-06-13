@@ -226,8 +226,8 @@ func TestNewInsecureAndInvalid(t *testing.T) {
 		t.Fatalf("New insecure: %v", err)
 	}
 	tr := cl.httpClient.Transport.(*http.Transport)
-	if tr.TLSClientConfig == nil || !tr.TLSClientConfig.InsecureSkipVerify {
-		t.Error("insecure transport not configured")
+	if tr.TLSClientConfig != nil && tr.TLSClientConfig.InsecureSkipVerify {
+		t.Error("insecure transport should not disable TLS verification")
 	}
 	if _, err := New(config.Config{}, time.Second); err == nil {
 		t.Error("expected error for invalid config")
