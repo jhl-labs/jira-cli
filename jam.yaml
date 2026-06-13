@@ -1,0 +1,6 @@
+version: 1
+
+suppress:
+  - metric: DUP-01
+    path: cmd_generate_skill.go
+    reason: Embedded skill-reference markdown repeats command examples; keep block findings visible while demoting the project-level duplicate-ratio summary.
